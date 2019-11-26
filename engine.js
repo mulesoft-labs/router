@@ -184,7 +184,7 @@ Engine.prototype.handle = function handle(req, res, callback) {
 
   next()
 
-  function next(err) {
+  async function next(err) {
     var layerError = err === 'route' || err === 'router'
       ? null
       : err
@@ -222,7 +222,7 @@ Engine.prototype.handle = function handle(req, res, callback) {
 
     while (!match && idx < stack.length) {
       layer = stack[idx++]
-      match = layer.match(path, req, res)
+      match = await layer.match(path, req, res)
       route = layer.route
 
       if (!match) {
