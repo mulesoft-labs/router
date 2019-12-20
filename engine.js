@@ -51,6 +51,9 @@ module.exports.methods = methods.concat('all')
  */
 
 function Engine(options) {
+  if (!(this instanceof Engine)) {
+    return new Engine(options)
+  }
   var opts = options || {}
 
   function router(req, res, next) {
