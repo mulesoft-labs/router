@@ -45,8 +45,8 @@ module.exports.methods = methods.concat('all')
 /**
  * Initialize a new `Router` with the given `options`.
  *
- * @param {object} options
- * @return {Router} which is an callable function
+ * @param {object} [options]
+ * @return {Router} which is a callable function
  * @public
  */
 
@@ -202,6 +202,12 @@ Engine.prototype.handle = function handle(req, res, callback) {
       removed = ''
     }
 
+    // signal to exit router
+    if (layerError === 'router') {
+      defer(done, null)
+      return
+    }
+
     // no more matching layers
     if (err === 'router' || idx >= stack.length) {
       defer(done, layerError)
@@ -292,16 +298,15 @@ Engine.prototype.handle = function handle(req, res, callback) {
   }
 
   function trim_prefix(layer, layerError, layerPath, path) {
-    var c = path[layerPath.length]
-
-    if (c && c !== '/') {
-      next(layerError)
-      return
-    }
-
-     // Trim off the part of the url that matches the route
-     // middleware (.use stuff) needs to have the path stripped
     if (layerPath.length !== 0) {
+      var c = path[layerPath.length]
+        if (c && c !== '/') {
+        next(layerError)
+        return
+      }
+
+      // Trim off the part of the url that matches the route
+      // middleware (.use stuff) needs to have the path stripped
       debug('trim prefix (%s) from url %s', layerPath, req.url)
       removed = layerPath
       req.url = protohost + req.url.substr(protohost.length + removed.length)
@@ -365,10 +370,6 @@ Engine.prototype.process_params = function process_params(match, called, req, re
 
     paramIndex = 0
     key = keys[i++]
-
-    if (!key) {
-      return done()
-    }
 
     paramVal = req.params[key]
     paramCallbacks = params[key]
@@ -465,7 +466,7 @@ Engine.prototype.use = function use(path, match, handlers) {
     }
 
     // add the middleware
-    debug('use %s %s', path, fn.name || '<anonymous>')
+    debug('use %o %s', path, fn.name || '<anonymous>')
 
     var layer = new this.Layer(path, layerMatch, fn)
     layer.route = undefined
@@ -556,7 +557,7 @@ function getPathname(req) {
  */
 
 function getProtohost(url) {
-  if (url.length === 0 || url[0] === '/') {
+  if (typeof url !== 'string' || url.length === 0 || url[0] === '/') {
     return undefined
   }
 
@@ -631,7 +632,7 @@ function restore(fn, obj) {
     vals[i] = obj[props[i]]
   }
 
-  return function(err){
+  return function () {
     // restore vals
     for (var i = 0; i < props.length; i++) {
       obj[props[i]] = vals[i]
