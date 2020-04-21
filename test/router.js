@@ -269,6 +269,7 @@ describe('Router', function () {
       ? shouldHaveBody(Buffer.from('hello, world'))
       : shouldNotHaveBody()
 
+
     describe('.' + method + '(path, ...fn)', function () {
       it('should be chainable', function () {
         var router = new Router()
@@ -495,6 +496,21 @@ describe('Router', function () {
       rawrequest(server)
         .options('*')
         .expect(200, 'saw OPTIONS *', cb)
+    })
+
+    it('should exit the router', function (done) {
+      var router = new Router()
+      var server = createServer(router)
+
+      router.use(function (req, res, next) {
+        next('router')
+      })
+
+      router.use(helloWorld)
+
+      request(server)
+      .get('/')
+      .expect(404, done)
     })
 
     it('should not invoke for blank URLs', function (done) {
